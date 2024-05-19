@@ -1,7 +1,7 @@
 import pygame
 import colors
 
-from piece import Piece, Pawn, Rook, Knight, Bishop, Queen, King
+from piece import kinds, Piece, Pawn, Rook, Knight, Bishop, Queen, King
 
 cell_width = 75
 cell_height = 75
@@ -83,7 +83,7 @@ class Board():
 			ypos += cell_height
 			alt = 1 if alt == 0 else 0
 
-	def get_cell_from_coord(self, x, y, setup=False):
+	def get_cell_from_coord(self, x, y):
 		if x < 0 or x > 7:
 			return -1
 
@@ -107,43 +107,43 @@ class Board():
 	def reset_cells(self):
 		for i in range(8):
 			for j in range(8):
-				cell = self.get_cell_from_coord(i, j, True)
+				cell = self.get_cell_from_coord(i, j)
 				cell.unselect()
 				cell.unshow_moves()
 
 	def set_piece(self, piece, x, y, setup=False):
-		self.get_cell_from_coord(x, y, setup).set_piece(piece)
+		self.get_cell_from_coord(x, y).set_piece(piece)
 
 	def setup(self):
 		for i in range(8):
-			self.set_piece(Pawn("white"), i, 1, True)
+			self.set_piece(Pawn("white"), i, 1)
 
 		for i in range(8):
-			self.set_piece(Pawn("black"), i, 6, True)
+			self.set_piece(Pawn("black"), i, 6)
 		
-		self.set_piece(Rook("black"), 0, 7, True)
-		self.set_piece(Rook("black"), 7, 7, True)
+		self.set_piece(Rook("black"), 0, 7)
+		self.set_piece(Rook("black"), 7, 7)
 
-		self.set_piece(Rook("white"), 0, 0, True)
-		self.set_piece(Rook("white"), 7, 0, True)
+		self.set_piece(Rook("white"), 0, 0)
+		self.set_piece(Rook("white"), 7, 0)
 
-		self.set_piece(Knight("black"), 1, 7, True)
-		self.set_piece(Knight("black"), 6, 7, True)
+		self.set_piece(Knight("black"), 1, 7)
+		self.set_piece(Knight("black"), 6, 7)
 
-		self.set_piece(Knight("white"), 1, 0, True)
-		self.set_piece(Knight("white"), 6, 0, True)
+		self.set_piece(Knight("white"), 1, 0)
+		self.set_piece(Knight("white"), 6, 0)
 
-		self.set_piece(Bishop("black"), 2, 7, True)
-		self.set_piece(Bishop("black"), 5, 7, True)
+		self.set_piece(Bishop("black"), 2, 7)
+		self.set_piece(Bishop("black"), 5, 7)
 
-		self.set_piece(Bishop("white"), 2, 0, True)
-		self.set_piece(Bishop("white"), 5, 0, True)
+		self.set_piece(Bishop("white"), 2, 0)
+		self.set_piece(Bishop("white"), 5, 0)
 
-		self.set_piece(Queen("white"), 3, 0, True)
-		self.set_piece(Queen("black"), 3, 7, True)
+		self.set_piece(Queen("white"), 3, 0)
+		self.set_piece(Queen("black"), 3, 7)
 
-		self.set_piece(King("white"), 4, 0, True)
-		self.set_piece(King("black"), 4, 7, True)
+		self.set_piece(King("white"), 4, 0)
+		self.set_piece(King("black"), 4, 7)
 
 	def render(self, rendertarget):
 		for row in self.cells:
