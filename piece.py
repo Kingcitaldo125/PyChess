@@ -11,13 +11,16 @@ kinds = {
 
 class Piece():
 	def __init__(self, piece_name, team):
-		self.xoffset = 0
-		self.yoffset = 0
+		self.width = 35
+		self.height = 50
+		self.xoffset = 20
+		self.yoffset = 10
 		self.team = team
 		self.kind = None
 
 		#print(f"Loading {team} {piece_name}")
 		self.image = pygame.image.load(f'images/{team}/{piece_name}.png').convert_alpha()
+		self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
 	def render(self, rendertarget, x, y):
 		rendertarget.blit(self.image, (x + self.xoffset, y + self.yoffset))
@@ -25,12 +28,7 @@ class Piece():
 class Pawn(Piece):
 	def __init__(self, team):
 		super().__init__("pawn", team)
-		self.width = 35
-		self.height = 50
-		self.xoffset = 20
-		self.yoffset = 10
 		self.kind = kinds["pawn"]
-		self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
 	def get_moves(self):
 		return []
@@ -38,12 +36,7 @@ class Pawn(Piece):
 class Rook(Piece):
 	def __init__(self, team):
 		super().__init__("rook", team)
-		self.width = 35
-		self.height = 50
-		self.xoffset = 12
-		self.yoffset = 0
 		self.kind = kinds["rook"]
-		self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
 	def get_moves(self):
 		return []
@@ -51,12 +44,31 @@ class Rook(Piece):
 class Knight(Piece):
 	def __init__(self, team):
 		super().__init__("knight", team)
-		self.width = 35
-		self.height = 50
-		self.xoffset = 12
-		self.yoffset = 0
 		self.kind = kinds["knight"]
-		self.image = pygame.transform.scale(self.image, (self.width, self.height))
+
+	def get_moves(self):
+		return []
+
+class Bishop(Piece):
+	def __init__(self, team):
+		super().__init__("bishop", team)
+		self.kind = kinds["bishop"]
+
+	def get_moves(self):
+		return []
+
+class Queen(Piece):
+	def __init__(self, team):
+		super().__init__("queen", team)
+		self.kind = kinds["queen"]
+
+	def get_moves(self):
+		return []
+
+class King(Piece):
+	def __init__(self, team):
+		super().__init__("king", team)
+		self.kind = kinds["king"]
 
 	def get_moves(self):
 		return []

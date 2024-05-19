@@ -1,7 +1,7 @@
 import pygame
 import colors
 
-#from time import sleep
+from time import sleep
 
 from board import Board
 from piece import Piece, Pawn, Rook, Knight
@@ -30,7 +30,9 @@ def main(winx=600, winy=600):
 			if e.type == pygame.MOUSEBUTTONDOWN:
 				mx,my = e.pos
 				print("mx,my",mx,my)
-				print("Cell:",board.get_cell_from_click(mx, my))
+				xcell = board.get_cell_from_click(mx, my)
+				print("Cell:", xcell)
+				print("Piece:", xcell.get_piece())
 			if e.type == pygame.KEYDOWN:
 				if e.key == pygame.K_ESCAPE:
 					done = True
@@ -40,9 +42,8 @@ def main(winx=600, winy=600):
 		board.render(screen)
 
 		pygame.display.flip()
-		clock.tick(60)
-
-	#sleep(3)
+		#clock.tick(60)
+		sleep(0.1)
 
 	pygame.display.quit()
 
