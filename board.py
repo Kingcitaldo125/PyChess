@@ -17,6 +17,7 @@ class Cell():
 		self.highlight = False
 		self.piece = None
 		self.selected = False
+		self.showingmoves = False
 		self.render_params = (self.cellx, self.celly, cell_width, cell_height)
 
 	def __str__(self):
@@ -37,6 +38,12 @@ class Cell():
 	def unselect(self):
 		self.selected = False
 
+	def show_moves(self):
+		self.showingmoves = True
+
+	def unshow_moves(self):
+		self.showingmoves = False
+
 	def render(self, rendertarget):
 		width = 2 if self.highlight else 0
 
@@ -44,6 +51,9 @@ class Cell():
 
 		if self.selected:
 			pygame.draw.rect(rendertarget, colors.brightgreen, self.render_params, 2)
+
+		if self.showingmoves:
+			pygame.draw.rect(rendertarget, colors.brightyellow, self.render_params, 2)
 
 		if self.piece:
 			self.piece.render(rendertarget, self.cellx, self.celly)
@@ -74,44 +84,32 @@ class Board():
 			alt = 1 if alt == 0 else 0
 
 	def get_cell_from_coord(self, x, y, setup=False):
-		if x < 0 or x > 8:
+		if x < 0 or x > 7:
 			return -1
 
-		if y < 0 or y > 8:
+		if y < 0 or y > 7:
 			return -1
-
-		if self.chosen_cell is not None:
-			self.chosen_cell.unselect()
-
-		if not setup:
-			scell = self.cells[y][x]
-			scell.select()
-
-			self.chosen_cell = scell
 
 		return self.cells[y][x]
 
 	def get_cell_from_click(self, x, y):
-		cx = x//75
-		cy = y//75
+		cx = x//cell_width
+		cy = y//cell_height
 
-		if cx < 0 or cx > 8:
+		if cx < 0 or cx > 7:
 			return -1
 
-		if cy < 0 or cy > 8:
+		if cy < 0 or cy > 7:
 			return -1
 
-		#print("cx,cy",cx,cy)
+		return self.cells[cy][cx]
 
-		if self.chosen_cell is not None:
-			self.chosen_cell.unselect()
-
-		scell = self.cells[cy][cx]
-		scell.select()
-
-		self.chosen_cell = scell
-
-		return scell
+	def reset_cells(self):
+		for i in range(8):
+			for j in range(8):
+				cell = self.get_cell_from_coord(i, j, True)
+				cell.unselect()
+				cell.unshow_moves()
 
 	def set_piece(self, piece, x, y, setup=False):
 		self.get_cell_from_coord(x, y, setup).set_piece(piece)

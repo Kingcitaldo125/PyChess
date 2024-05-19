@@ -6,6 +6,27 @@ from time import sleep
 from board import Board
 from piece import Piece, Pawn, Rook, Knight
 
+def handle_moves(board, cell, piece):
+	if piece is None:
+		return
+
+	cell.select()
+
+	#print("Piece:", piece)
+	moves = piece.get_moves(cell.x, cell.y)
+	#print("Piece moves:", moves)
+
+	for m in moves:
+		x,y = m[0],m[1]
+
+		if x < 0 or x > 7:
+			continue
+
+		if y < 0 or y > 7:
+			continue
+
+		mcell = board.get_cell_from_coord(m[0], m[1])
+		mcell.show_moves()
 
 def main(winx=600, winy=600):
 	pygame.display.init()
@@ -28,11 +49,15 @@ def main(winx=600, winy=600):
 
 		for e in events:
 			if e.type == pygame.MOUSEBUTTONDOWN:
+				board.reset_cells()
+
 				mx,my = e.pos
-				print("mx,my",mx,my)
 				xcell = board.get_cell_from_click(mx, my)
-				print("Cell:", xcell)
-				print("Piece:", xcell.get_piece())
+
+				xpiece = xcell.get_piece()
+
+				handle_moves(board, xcell, xpiece)
+
 			if e.type == pygame.KEYDOWN:
 				if e.key == pygame.K_ESCAPE:
 					done = True
