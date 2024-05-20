@@ -26,6 +26,9 @@ class Cell():
 
 		return str1 + " " + str2
 
+	def occupied(self):
+		return self.piece is not None
+
 	def get_piece(self):
 		return self.piece
 
@@ -144,6 +147,37 @@ class Board():
 
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)
+
+	def evaluate_check(self, x, y):
+		if x < 0 or x > 7:
+			return False
+
+		if y < 0 or y > 7:
+			return False
+
+		ecell = self.get_cell_from_coord(x,y)
+
+		if ecell == -1:
+			return False
+
+		epiece = ecell.get_piece()
+
+		if epiece is None:
+			return False
+
+		if epiece.kind == kinds["king"]:
+			return True
+
+		moves = epiece.get_moves(xcell.x, xcell.y)
+		for m in moves:
+			mx,my = m[0],m[1]
+			lres = self.evaluate_check_help(mx, my)
+			if lres:
+				return True
+		return False
+
+	def evaluate_check(self, x, y):
+		return self.evaluate_check_help(x, y)
 
 	def render(self, rendertarget):
 		for row in self.cells:

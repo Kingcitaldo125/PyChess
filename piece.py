@@ -1,4 +1,5 @@
-import pygame
+from pygame import image, transform
+
 
 kinds = {
 	"pawn":0,
@@ -17,10 +18,14 @@ class Piece():
 		self.yoffset = 10
 		self.team = team
 		self.kind = None
+		self.moved = False
 
 		#print(f"Loading {team} {piece_name}")
-		self.image = pygame.image.load(f'images/{team}/{piece_name}.png').convert_alpha()
-		self.image = pygame.transform.scale(self.image, (self.width, self.height))
+		self.image = image.load(f'images/{team}/{piece_name}.png').convert_alpha()
+		self.image = transform.scale(self.image, (self.width, self.height))
+
+	def set_moved(self):
+		self.moved = True
 
 	def render(self, rendertarget, x, y):
 		rendertarget.blit(self.image, (x + self.xoffset, y + self.yoffset))
@@ -31,6 +36,16 @@ class Pawn(Piece):
 		self.kind = kinds["pawn"]
 
 	def get_moves(self, x, y):
+		if self.moved:
+			if self.team == "white":
+				return [(x, y+1)]
+			return [(x, y-1)]
+		else:
+			if self.team == "white":
+				return [(x, y+1), (x, y+2)]
+			return [(x, y-1), (x, y-2)]
+
+	def get_attacks(self, x, y):
 		if self.team == "white":
 			return [(x-1, y+1), (x+1, y+1)]
 		return [(x-1, y-1), (x+1, y-1)]
@@ -46,16 +61,19 @@ class Rook(Piece):
 		for i in range(y):
 			moves.append((x,i))
 
-		for i in range(y,8):
+		for i in range(y + 1, 8):
 			moves.append((x,i))
 
 		for i in range(x):
 			moves.append((i,y))
 
-		for i in range(x,8):
+		for i in range(x + 1, 8):
 			moves.append((i,y))
 
 		return moves
+
+	def get_attacks(self, x, y):
+		return self.get_moves(x,y)
 
 class Knight(Piece):
 	def __init__(self, team):
@@ -65,6 +83,9 @@ class Knight(Piece):
 	def get_moves(self, x, y):
 		moves = [(x-2,y-1), (x+2,y-1), (x-2,y+1), (x+2,y+1)]
 		return moves
+
+	def get_attacks(self, x, y):
+		return self.get_moves(x,y)
 
 class Bishop(Piece):
 	def __init__(self, team):
@@ -113,6 +134,9 @@ class Bishop(Piece):
 
 		return moves
 
+	def get_attacks(self, x, y):
+		return self.get_moves(x,y)
+
 class Queen(Piece):
 	def __init__(self, team):
 		super().__init__("queen", team)
@@ -120,6 +144,9 @@ class Queen(Piece):
 
 	def get_moves(self, x, y):
 		return Bishop(self.team).get_moves(x,y) + Rook(self.team).get_moves(x,y)
+
+	def get_attacks(self, x, y):
+		return self.get_moves(x,y)
 
 class King(Piece):
 	def __init__(self, team):
@@ -136,6 +163,12 @@ class King(Piece):
 			for j in range(y-1, y+2, 1):
 				if j < 0 or j > 7:
 					continue
+				if x == i and j == y:
+					continue
+
 				moves.append((i, j))
 
 		return moves
+
+	def get_attacks(self, x, y):
+		return self.get_moves(x,y)
