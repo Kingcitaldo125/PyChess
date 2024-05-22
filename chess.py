@@ -1,7 +1,5 @@
 import pygame
 
-from time import sleep
-
 from board import Board
 from handler import Handler
 
@@ -23,6 +21,7 @@ def main(winx=600, winy=600):
 	handler.render()
 
 	while not done:
+		clock.tick(10)
 		events = pygame.event.get()
 
 		for e in events:
@@ -32,9 +31,7 @@ def main(winx=600, winy=600):
 			if e.type == pygame.KEYDOWN:
 				if e.key == pygame.K_ESCAPE:
 					done = True
-
-		#clock.tick(60)
-		sleep(0.1)
+					break
 
 	pygame.display.quit()
 

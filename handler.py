@@ -20,18 +20,26 @@ class Handler():
 		self.board.render(self.screen)
 		pygame.display.flip()
 
-	def valid_move(self, move_cell, move_piece):
+	def valid_move(self, move_cell, move_piece, print_why=False):
 		if move_cell.x < 0 or move_cell.x > 7:
+			if print_why:
+				print("Cell x coord out of bounds")
 			return False
 
 		if move_cell.y < 0 or move_cell.y > 7:
+			if print_why:
+				print("Cell y coord out of bounds")
 			return False
 
 		if (move_cell.x, move_cell.y) not in self.moves:
+			if print_why:
+				print("Not a valid move coordinate", self.moves)
 			return False
 		
 		if move_piece is not None:
 			if self.selected_piece.team == move_piece.team:
+				if print_why:
+					print("Trying to conquer a teammate")
 				return False
 
 		return True
@@ -50,8 +58,7 @@ class Handler():
 			cell = self.board.get_cell_from_coord(x,y)
 
 			if cell == -1:
-				self.moves = []
-				return
+				continue
 
 			if not cell.occupied():
 				self.moves.append((x,y))
@@ -61,10 +68,11 @@ class Handler():
 			cell = self.board.get_cell_from_coord(x,y)
 
 			if cell == -1:
-				self.moves = []
-				return
+				continue
 
 			if cell.occupied():
+				if cell.get_piece().team == xpiece.team:
+					continue
 				self.moves.append((x,y))
 
 	def handle_game_logic(self, mx, my):
@@ -92,10 +100,12 @@ class Handler():
 				mcell = self.board.get_cell_from_coord(m[0], m[1])
 
 				if mcell == -1:
-					self.moves = []
-					return
+					self.moves.remove(m)
 
-				mcell.show_moves()
+			for m in self.moves:
+				mcell = self.board.get_cell_from_coord(m[0], m[1])
+				if mcell != -1:
+					mcell.show_moves()
 
 		if self.selected_piece is not None:
 			if not self.valid_move(xcell, xpiece):
