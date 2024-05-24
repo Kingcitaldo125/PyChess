@@ -82,6 +82,7 @@ class Knight(Piece):
 
 	def get_moves(self, x, y):
 		moves = [(x-2,y-1), (x+2,y-1), (x-2,y+1), (x+2,y+1)]
+		moves.extend([(x-1,y-2), (x+1,y-2), (x-1,y+2), (x+1,y+2)])
 		return moves
 
 	def get_attacks(self, x, y):

@@ -75,6 +75,29 @@ class Handler():
 					continue
 				self.moves.append((x,y))
 
+	def filter_moves(self, xpiece):
+		newmoves = []
+
+		for m in self.moves:
+			mcell = self.board.get_cell_from_coord(m[0], m[1])
+
+			if mcell == -1:
+				continue
+
+			if mcell.occupied():
+				if mcell.get_piece().team == xpiece.team:
+					continue
+
+			newmoves.append(m)
+
+		self.moves = newmoves.copy()
+
+	def show_moves(self):
+		for m in self.moves:
+			mcell = self.board.get_cell_from_coord(m[0], m[1])
+			if mcell != -1:
+				mcell.show_moves()
+
 	def handle_game_logic(self, mx, my):
 		self.board.reset_cells()
 
@@ -96,16 +119,8 @@ class Handler():
 			else:
 				self.moves = [pm for pm in piece_moves]
 
-			for m in self.moves:
-				mcell = self.board.get_cell_from_coord(m[0], m[1])
-
-				if mcell == -1:
-					self.moves.remove(m)
-
-			for m in self.moves:
-				mcell = self.board.get_cell_from_coord(m[0], m[1])
-				if mcell != -1:
-					mcell.show_moves()
+			self.filter_moves(xpiece)
+			self.show_moves()
 
 		if self.selected_piece is not None:
 			if not self.valid_move(xcell, xpiece):
