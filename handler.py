@@ -44,6 +44,9 @@ class Handler():
 
 		return True
 
+	def other_team(self, team):
+		return "white" if team == "black" else "black"
+
 	def get_team_from_turn(self):
 		return "white" if self.turn == 1 else "black"
 
@@ -103,6 +106,13 @@ class Handler():
 
 		xcell = self.board.get_cell_from_click(mx, my)
 		xpiece = xcell.get_piece()
+		check = False
+
+		# Evaluate a check condition before moving the piece
+		if xpiece is not None:
+			check = self.board.evaluate_check(xpiece.team)
+			if check:
+				print(f"{xpiece.team} in check.")
 
 		# Set and render the potential moves for the selected cell
 		if xpiece is not None and self.selected_piece is None:
@@ -137,9 +147,27 @@ class Handler():
 			xcell.set_piece(self.selected_piece)
 			self.selected_piece.set_moved()
 
+			check = self.board.evaluate_check(self.selected_piece.team)
+			if check:
+				print(f"{self.selected_piece.team} in check.")
+
+				# Revert the move
+				self.selected_cell.set_piece(self.selected_piece)
+				self.selected_cell.select()
+				xcell.set_piece(None)
+				self.selected_piece.unset_moved()
+
+				self.render()
+				return
+
 			# Change the player's turn
 			self.turn = 1 if self.turn == 0 else 0
-			print("White's turn" if self.turn == 1 else "Black's turn")
+			self.print_turn()
+
+			oteam = self.other_team(self.selected_piece.team)
+			check = self.board.evaluate_check(oteam)
+			if check:
+				print(f"{oteam} in check.")
 
 			self.moves = []
 			self.selected_piece = None

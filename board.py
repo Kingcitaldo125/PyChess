@@ -148,36 +148,40 @@ class Board():
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)
 
-	def evaluate_check(self, x, y):
-		if x < 0 or x > 7:
-			return False
+	def evaluate_check_help(self, ecell, epiece, eteam):
+		moves = epiece.get_moves(ecell.x, ecell.y)
 
-		if y < 0 or y > 7:
-			return False
-
-		ecell = self.get_cell_from_coord(x,y)
-
-		if ecell == -1:
-			return False
-
-		epiece = ecell.get_piece()
-
-		if epiece is None:
-			return False
-
-		if epiece.kind == kinds["king"]:
-			return True
-
-		moves = epiece.get_moves(xcell.x, xcell.y)
 		for m in moves:
-			mx,my = m[0],m[1]
-			lres = self.evaluate_check_help(mx, my)
-			if lres:
-				return True
+			mcell = self.get_cell_from_coord(m[0], m[1])
+
+			if mcell == -1:
+				continue
+
+			if mcell.occupied():
+				mpiece = mcell.get_piece()
+				if mpiece.kind == kinds["king"] and mpiece.team == eteam:
+					print(f"{mpiece.team} king found in cell {mcell}")
+					return True
+
 		return False
 
-	def evaluate_check(self, x, y):
-		return self.evaluate_check_help(x, y)
+	def evaluate_check(self, team):
+		for row in self.cells:
+			for cell in row:
+				if not cell.occupied():
+					continue
+
+				piece = cell.get_piece()
+
+				if piece.team == team:
+					continue
+
+				ech = self.evaluate_check_help(cell, piece, team)
+
+				if ech == True:
+					return True
+
+		return False
 
 	def render(self, rendertarget):
 		for row in self.cells:

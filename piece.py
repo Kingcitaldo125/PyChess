@@ -27,6 +27,9 @@ class Piece():
 	def set_moved(self):
 		self.moved = True
 
+	def unset_moved(self):
+		self.moved = False
+
 	def render(self, rendertarget, x, y):
 		rendertarget.blit(self.image, (x + self.xoffset, y + self.yoffset))
 
