@@ -2,7 +2,7 @@ import pygame
 
 import colors
 
-from piece import kinds, Pawn, Rook, Knight
+from piece import kinds, Pawn, Bishop, Rook, Knight, Queen
 
 
 class Handler():
@@ -90,6 +90,20 @@ class Handler():
 			# Check for valid/invalid pawn moves/attacks
 			if type(xpiece) == Pawn:
 				self.move_handler.handle_pawn_moves(xcell, xpiece, piece_moves)
+			elif type(xpiece) == Queen:
+				# Handle odd pathfinding bug which includes excluded tiles
+				print("Handling queen moves")
+
+				bmoves = Bishop(xpiece.team).get_moves(xcell.x, xcell.y)
+				rmoves = Rook(xpiece.team).get_moves(xcell.x, xcell.y)
+
+				self.move_handler.set_moves(bmoves)
+				xbmoves = self.move_handler.filter_moves(xcell, xpiece)
+
+				self.move_handler.set_moves(rmoves)
+				xrmoves = self.move_handler.filter_moves(xcell, xpiece)
+
+				self.move_handler.set_moves(xbmoves + xrmoves)
 			else:
 				self.move_handler.set_moves([pm for pm in piece_moves])
 				xmoves = self.move_handler.filter_moves(xcell, xpiece)

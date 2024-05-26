@@ -146,7 +146,7 @@ class Board():
 		self.set_piece(Queen("white"), 3, 0)
 		self.set_piece(Queen("black"), 3, 7)
 
-		self.set_piece(Queen("black"), 4, 4)
+		#self.set_piece(Queen("black"), 4, 4)
 
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)
