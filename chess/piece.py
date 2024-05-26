@@ -21,7 +21,7 @@ class Piece():
 		self.moved = False
 
 		#print(f"Loading {team} {piece_name}")
-		self.image = image.load(f'images/{team}/{piece_name}.png').convert_alpha()
+		self.image = image.load(f'./chess/images/{team}/{piece_name}.png').convert_alpha()
 		self.image = transform.scale(self.image, (self.width, self.height))
 
 	def set_moved(self):

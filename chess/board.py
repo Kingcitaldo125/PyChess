@@ -1,4 +1,5 @@
 import pygame
+
 import colors
 
 from piece import kinds, Piece, Pawn, Rook, Knight, Bishop, Queen, King

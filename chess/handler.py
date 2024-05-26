@@ -1,5 +1,6 @@
-import colors
 import pygame
+
+import colors
 
 from piece import Piece, Pawn, Rook, Knight
 
