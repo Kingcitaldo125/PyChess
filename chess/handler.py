@@ -2,17 +2,17 @@ import pygame
 
 import colors
 
-from piece import Piece, Pawn, Rook, Knight
+from piece import kinds, Pawn, Rook, Knight
 
 
 class Handler():
-	def __init__(self, board, screen):
+	def __init__(self, board, screen, move_handler):
 		self.board = board
 		self.screen = screen
 		self.turn = 0
 		self.selected_piece = None
 		self.selected_cell = None
-		self.moves = []
+		self.move_handler = move_handler
 
 		self.print_turn()
 
@@ -20,30 +20,6 @@ class Handler():
 		self.screen.fill(colors.black)
 		self.board.render(self.screen)
 		pygame.display.flip()
-
-	def valid_move(self, move_cell, move_piece, print_why=False):
-		if move_cell.x < 0 or move_cell.x > 7:
-			if print_why:
-				print("Cell x coord out of bounds")
-			return False
-
-		if move_cell.y < 0 or move_cell.y > 7:
-			if print_why:
-				print("Cell y coord out of bounds")
-			return False
-
-		if (move_cell.x, move_cell.y) not in self.moves:
-			if print_why:
-				print("Not a valid move coordinate", self.moves)
-			return False
-		
-		if move_piece is not None:
-			if self.selected_piece.team == move_piece.team:
-				if print_why:
-					print("Trying to conquer a teammate")
-				return False
-
-		return True
 
 	def other_team(self, team):
 		return "white" if team == "black" else "black"
@@ -54,117 +30,40 @@ class Handler():
 	def print_turn(self):
 		print("White's turn" if self.turn == 1 else "Black's turn")
 
-	def handle_pawn_moves(self, xcell, xpiece, piece_moves):
-		attacks = xpiece.get_attacks(xcell.x, xcell.y)
-
+	def evaluate_check_help(self, ecell, piece_moves, eteam):
 		for m in piece_moves:
-			x,y = m[0],m[1]
-			cell = self.board.get_cell_from_coord(x,y)
-
-			if cell == -1:
-				continue
-
-			if not cell.occupied():
-				self.moves.append((x,y))
-
-		for m in attacks:
-			x,y = m[0],m[1]
-			cell = self.board.get_cell_from_coord(x,y)
-
-			if cell == -1:
-				continue
-
-			if cell.occupied():
-				if cell.get_piece().team == xpiece.team:
-					continue
-				self.moves.append((x,y))
-
-	def _get_neighbors(self, curmoves, visited, xpiece, x, y):
-		neighbors = []
-
-		for i in range(x - 1, x + 2):
-			if i < 0 or i > 7:
-				continue
-
-			for j in range(y - 1, y + 2):
-				if j < 0 or j > 7:
-					continue
-
-				if (i,j) not in curmoves:
-					continue
-
-				ijcell = self.board.get_cell_from_coord(i,j)
-
-				if ijcell.occupied():
-					ijpiece = ijcell.get_piece()
-
-					if ijpiece.team != xpiece.team:
-						neighbors.append((i,j))
-						visited.add((i,j))
-					continue
-
-				neighbors.append((i,j))
-
-		return neighbors
-
-	def _los_help(self, curmoves, visited, xpiece, x, y):
-		visited.add((x,y))
-
-		neighbors = self._get_neighbors(curmoves, visited, xpiece, x, y)
-
-		for n in neighbors:
-			nx,ny = n[0],n[1]
-			#print("neighbor:",nx,ny)
-
-			if (nx, ny) not in visited:
-				self._los_help(curmoves, visited, xpiece, nx, ny)
-
-	def handle_los_from_cell(self, xcell, xpiece):
-		visited = set([])
-		curmoves = [mv for mv in self.moves]
-		newmoves = []
-
-		self._los_help(curmoves, visited, xpiece, xcell.x, xcell.y)
-
-		#print(f"Visited: {visited}")
-
-		for m in self.moves:
-			if m not in visited:
-				continue
-
-			newmoves.append(m)
-
-		return newmoves
-
-	def filter_moves(self, xcell, xpiece):
-		# Knight can jump over pieces
-		if type(xpiece) == Knight:
-			newmoves = []
-
-			for m in self.moves:
-				mcell = self.board.get_cell_from_coord(m[0], m[1])
-
-				if mcell == -1:
-					continue
-
-				if mcell.occupied():
-					mpiece = mcell.get_piece()
-
-					if mpiece.team == xpiece.team:
-						continue
-
-				newmoves.append(m)
-
-			self.moves = newmoves
-			return
-
-		self.moves = self.handle_los_from_cell(xcell, xpiece)
-
-	def show_moves(self):
-		for m in self.moves:
 			mcell = self.board.get_cell_from_coord(m[0], m[1])
-			if mcell != -1:
-				mcell.show_moves()
+
+			if mcell == -1:
+				continue
+
+			if mcell.occupied():
+				mpiece = mcell.get_piece()
+				if mpiece.kind == kinds["king"] and mpiece.team == eteam:
+					print(f"{mpiece.team} king found in cell {mcell}")
+					return True
+
+		return False
+
+	def evaluate_check(self, team):
+		for row in self.board.cells:
+			for cell in row:
+				if not cell.occupied():
+					continue
+
+				piece = cell.get_piece()
+
+				if piece.team == team:
+					continue
+
+				moves = self.move_handler.filter_moves(cell, piece)
+
+				ech = self.evaluate_check_help(cell, moves, team)
+
+				if ech == True:
+					return True
+
+		return False
 
 	def handle_game_logic(self, mx, my):
 		self.board.reset_cells()
@@ -175,7 +74,7 @@ class Handler():
 
 		# Evaluate a check condition before moving the piece
 		if xpiece is not None:
-			check = self.board.evaluate_check(xpiece.team)
+			check = self.evaluate_check(xpiece.team)
 			if check:
 				print(f"{xpiece.team} in check.")
 
@@ -190,19 +89,21 @@ class Handler():
 
 			# Check for valid/invalid pawn moves/attacks
 			if type(xpiece) == Pawn:
-				self.handle_pawn_moves(xcell, xpiece, piece_moves)
+				self.move_handler.handle_pawn_moves(xcell, xpiece, piece_moves)
 			else:
-				self.moves = [pm for pm in piece_moves]
-				self.filter_moves(xcell, xpiece)
+				self.move_handler.set_moves([pm for pm in piece_moves])
+				xmoves = self.move_handler.filter_moves(xcell, xpiece)
+				self.move_handler.set_moves(xmoves)
 
-			self.show_moves()
+			self.move_handler.show_moves()
 
+		# Handle a potential piece move with a currently selected piece
 		if self.selected_piece is not None:
-			if not self.valid_move(xcell, xpiece):
+			if not self.move_handler.valid_move(xcell, xpiece, self.selected_piece):
 				print(f"Not a valid_move: {self.selected_cell} -> {xcell}")
 				self.selected_piece = None
 				self.selected_cell = None
-				self.moves = []
+				self.move_handler.reset_moves()
 				self.render()
 				return
 
@@ -212,7 +113,8 @@ class Handler():
 			xcell.set_piece(self.selected_piece)
 			self.selected_piece.set_moved()
 
-			check = self.board.evaluate_check(self.selected_piece.team)
+			# Evaluate check condition after the piece move
+			check = self.evaluate_check(self.selected_piece.team)
 			if check:
 				print(f"{self.selected_piece.team} in check.")
 
@@ -230,11 +132,11 @@ class Handler():
 			self.print_turn()
 
 			oteam = self.other_team(self.selected_piece.team)
-			check = self.board.evaluate_check(oteam)
+			check = self.evaluate_check(oteam)
 			if check:
 				print(f"{oteam} in check.")
 
-			self.moves = []
+			self.move_handler.reset_moves()
 			self.selected_piece = None
 			self.selected_cell = None
 		else:

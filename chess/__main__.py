@@ -2,6 +2,7 @@ import pygame
 
 from board import Board
 from handler import Handler
+from move_handler import MoveHandler
 
 
 def main(winx=600, winy=600):
@@ -17,7 +18,9 @@ def main(winx=600, winy=600):
 
 	board.setup()
 
-	handler = Handler(board, screen)
+	move_handler = MoveHandler(board)
+	handler = Handler(board, screen, move_handler)
+
 	handler.render()
 
 	while not done:

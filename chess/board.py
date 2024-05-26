@@ -2,7 +2,7 @@ import pygame
 
 import colors
 
-from piece import kinds, Piece, Pawn, Rook, Knight, Bishop, Queen, King
+from piece import Pawn, Rook, Knight, Bishop, Queen, King
 
 cell_width = 75
 cell_height = 75
@@ -146,43 +146,10 @@ class Board():
 		self.set_piece(Queen("white"), 3, 0)
 		self.set_piece(Queen("black"), 3, 7)
 
+		self.set_piece(Queen("black"), 4, 4)
+
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)
-
-	def evaluate_check_help(self, ecell, epiece, eteam):
-		moves = epiece.get_moves(ecell.x, ecell.y)
-
-		for m in moves:
-			mcell = self.get_cell_from_coord(m[0], m[1])
-
-			if mcell == -1:
-				continue
-
-			if mcell.occupied():
-				mpiece = mcell.get_piece()
-				if mpiece.kind == kinds["king"] and mpiece.team == eteam:
-					print(f"{mpiece.team} king found in cell {mcell}")
-					return True
-
-		return False
-
-	def evaluate_check(self, team):
-		for row in self.cells:
-			for cell in row:
-				if not cell.occupied():
-					continue
-
-				piece = cell.get_piece()
-
-				if piece.team == team:
-					continue
-
-				ech = self.evaluate_check_help(cell, piece, team)
-
-				if ech == True:
-					return True
-
-		return False
 
 	def render(self, rendertarget):
 		for row in self.cells:
