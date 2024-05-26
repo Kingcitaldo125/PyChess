@@ -79,22 +79,86 @@ class Handler():
 					continue
 				self.moves.append((x,y))
 
-	def filter_moves(self, xpiece):
-		newmoves = []
+	def _get_neighbors(self, curmoves, visited, xpiece, x, y):
+		neighbors = []
 
-		for m in self.moves:
-			mcell = self.board.get_cell_from_coord(m[0], m[1])
-
-			if mcell == -1:
+		for i in range(x - 1, x + 2):
+			if i < 0 or i > 7:
 				continue
 
-			if mcell.occupied():
-				if mcell.get_piece().team == xpiece.team:
+			for j in range(y - 1, y + 2):
+				if j < 0 or j > 7:
 					continue
+
+				if (i,j) not in curmoves:
+					continue
+
+				ijcell = self.board.get_cell_from_coord(i,j)
+
+				if ijcell.occupied():
+					ijpiece = ijcell.get_piece()
+
+					if ijpiece.team != xpiece.team:
+						neighbors.append((i,j))
+						visited.add((i,j))
+					continue
+
+				neighbors.append((i,j))
+
+		return neighbors
+
+	def _los_help(self, curmoves, visited, xpiece, x, y):
+		visited.add((x,y))
+
+		neighbors = self._get_neighbors(curmoves, visited, xpiece, x, y)
+
+		for n in neighbors:
+			nx,ny = n[0],n[1]
+			#print("neighbor:",nx,ny)
+
+			if (nx, ny) not in visited:
+				self._los_help(curmoves, visited, xpiece, nx, ny)
+
+	def handle_los_from_cell(self, xcell, xpiece):
+		visited = set([])
+		curmoves = [mv for mv in self.moves]
+		newmoves = []
+
+		self._los_help(curmoves, visited, xpiece, xcell.x, xcell.y)
+
+		#print(f"Visited: {visited}")
+
+		for m in self.moves:
+			if m not in visited:
+				continue
 
 			newmoves.append(m)
 
-		self.moves = newmoves.copy()
+		return newmoves
+
+	def filter_moves(self, xcell, xpiece):
+		# Knight can jump over pieces
+		if type(xpiece) == Knight:
+			newmoves = []
+
+			for m in self.moves:
+				mcell = self.board.get_cell_from_coord(m[0], m[1])
+
+				if mcell == -1:
+					continue
+
+				if mcell.occupied():
+					mpiece = mcell.get_piece()
+
+					if mpiece.team == xpiece.team:
+						continue
+
+				newmoves.append(m)
+
+			self.moves = newmoves
+			return
+
+		self.moves = self.handle_los_from_cell(xcell, xpiece)
 
 	def show_moves(self):
 		for m in self.moves:
@@ -129,8 +193,8 @@ class Handler():
 				self.handle_pawn_moves(xcell, xpiece, piece_moves)
 			else:
 				self.moves = [pm for pm in piece_moves]
+				self.filter_moves(xcell, xpiece)
 
-			self.filter_moves(xpiece)
 			self.show_moves()
 
 		if self.selected_piece is not None:

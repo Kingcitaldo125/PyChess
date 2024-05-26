@@ -1,5 +1,7 @@
 from pygame import image, transform
 
+from os.path import abspath, join
+
 
 kinds = {
 	"pawn":0,
@@ -21,7 +23,9 @@ class Piece():
 		self.moved = False
 
 		#print(f"Loading {team} {piece_name}")
-		self.image = image.load(f'./chess/images/{team}/{piece_name}.png').convert_alpha()
+		image_folder = join('\\'.join(abspath(__file__).split('\\')[:-1]), "images/")
+		team_str = f'{team}/{piece_name}.png'
+		self.image = image.load(join(image_folder, team_str)).convert_alpha()
 		self.image = transform.scale(self.image, (self.width, self.height))
 
 	def set_moved(self):
