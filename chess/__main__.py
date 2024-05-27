@@ -1,5 +1,7 @@
 import pygame
 
+from time import sleep
+
 from board import Board
 from handler import Handler
 from move_handler import MoveHandler
@@ -30,7 +32,12 @@ def main(winx=600, winy=600):
 		for e in events:
 			if e.type == pygame.MOUSEBUTTONDOWN:
 				mx,my = e.pos[0],e.pos[1]
-				handler.handle_game_logic(mx, my)
+				result = handler.handle_game_logic(mx, my)
+				if result:
+					print("Game Over.")
+					done = True
+					sleep(5)
+					break
 			if e.type == pygame.KEYDOWN:
 				if e.key == pygame.K_ESCAPE:
 					done = True

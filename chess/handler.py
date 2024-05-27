@@ -2,7 +2,7 @@ import pygame
 
 import colors
 
-from piece import kinds, Pawn, Queen
+from piece import kinds, Pawn, Queen, King
 
 
 class Handler():
@@ -30,7 +30,7 @@ class Handler():
 	def print_turn(self):
 		print("White's turn" if self.turn == 1 else "Black's turn")
 
-	def evaluate_check(self, team):
+	def evaluate_check(self, team, print_result=False):
 		for row in self.board.get_cells():
 			for cell in row:
 				if not cell.occupied():
@@ -59,9 +59,65 @@ class Handler():
 						mpiece = mcell.get_piece()
 
 						if mpiece.kind == kinds["king"] and mpiece.team == team:
-							print(f"{mpiece.team} king found in cell {mcell} by {cell}")
+							if print_result:
+								print(f"{mpiece.team} king found in cell {mcell} by {cell}")
 							return True
 		return False
+
+	def handle_king_check_moves(self, cell, piece, king_moves):
+		newmoves = []
+		cell.unset_piece()
+		result = True
+
+		for km in king_moves:
+			mcell = self.board.get_cell_from_coord(km[0], km[1])
+
+			if mcell == -1:
+				continue
+
+			moccupied = mcell.occupied()
+			mpiece = None
+
+			if moccupied:
+				mpiece = mcell.get_piece()
+
+			mcell.set_piece(piece)
+
+			xcheck = self.evaluate_check(piece.team)
+			if xcheck == False:
+				newmoves.append(km)
+				result = False
+
+			mcell.unset_piece()
+			
+			if moccupied:
+				mcell.set_piece(mpiece)
+
+		cell.set_piece(piece)
+		return (result, newmoves)
+
+	def evaluate_checkmate(self, team):
+		for row in self.board.get_cells():
+			for cell in row:
+				if not cell.occupied():
+					continue
+
+				piece = cell.get_piece()
+
+				if piece.team != team:
+					continue
+
+				if piece.kind != kinds["king"]:
+					continue
+
+				moves = piece.get_moves(cell.x, cell.y)
+				king_moves = self.move_handler.filter_moves(cell, piece, [p for p in moves])
+
+				res,_ = self.handle_king_check_moves(cell, piece, king_moves)
+				if res == False:
+					return False
+
+		return True
 
 	def handle_game_logic(self, mx, my):
 		self.board.reset_cells()
@@ -69,19 +125,24 @@ class Handler():
 		xcell = self.board.get_cell_from_click(mx, my)
 		xpiece = xcell.get_piece()
 		check = False
+		checkmate = False
 
 		# Evaluate a check condition before moving the piece
 		if xpiece is not None:
 			oteam = self.other_team(xpiece.team)
-			check = self.evaluate_check(oteam)
+			check = self.evaluate_check(oteam, print_result=True)
+
 			if check:
 				print(f"{oteam} in check.")
+				checkmate = self.evaluate_checkmate(oteam)
+				if checkmate:
+					return True
 
 		# Set and render the potential moves for the selected cell
 		if xpiece is not None and self.selected_piece is None:
 			if xpiece.team != self.get_team_from_turn():
 				print("Not that player's turn.")
-				return
+				return False
 
 			xcell.select()
 			piece_moves = xpiece.get_moves(xcell.x, xcell.y)
@@ -91,6 +152,10 @@ class Handler():
 				piece_moves = self.move_handler.handle_pawn_moves(xcell, xpiece, piece_moves.copy())
 			elif type(xpiece) == Queen:
 				piece_moves = self.move_handler.handle_queen_moves(xcell, xpiece)
+			elif type(xpiece) == King:
+				pm = [p for p in piece_moves]
+				piece_moves = self.move_handler.filter_moves(xcell, xpiece, pm)
+				_,piece_moves = self.handle_king_check_moves(xcell, xpiece, piece_moves)
 			else:
 				pm = [p for p in piece_moves]
 				piece_moves = self.move_handler.filter_moves(xcell, xpiece, pm)
@@ -106,7 +171,7 @@ class Handler():
 				self.selected_cell = None
 				self.move_handler.reset_moves()
 				self.render()
-				return
+				return False
 
 			# Move the piece into the new cell
 			self.selected_cell.set_piece(None)
@@ -121,9 +186,10 @@ class Handler():
 			oteam = self.other_team(self.selected_piece.team)
 
 			# Evaluate check condition after the piece move
-			check = self.evaluate_check(oteam)
+			check = self.evaluate_check(oteam, print_result=True)
 			if check:
 				print(f"{oteam} in check.")
+				checkmate = self.evaluate_checkmate(oteam)
 
 			self.move_handler.reset_moves()
 			self.selected_piece = None
@@ -133,3 +199,7 @@ class Handler():
 			self.selected_cell = xcell
 
 		self.render()
+
+		if checkmate:
+			return True
+		return False

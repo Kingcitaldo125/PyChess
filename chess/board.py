@@ -36,6 +36,9 @@ class Cell():
 	def set_piece(self, piece):
 		self.piece = piece
 
+	def unset_piece(self):
+		self.piece = None
+
 	def select(self):
 		self.selected = True
 
@@ -149,7 +152,8 @@ class Board():
 		self.set_piece(Queen("white"), 3, 0)
 		self.set_piece(Queen("black"), 3, 7)
 
-		#self.set_piece(Queen("black"), 3, 4)
+		#self.set_piece(Queen("black"), 3, 6)
+		#self.set_piece(Queen("black"), 5, 6)
 
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)
