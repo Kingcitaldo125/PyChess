@@ -87,6 +87,9 @@ class Board():
 			ypos += cell_height
 			alt = 1 if alt == 0 else 0
 
+	def get_cells(self):
+		return self.cells
+
 	def get_cell_from_coord(self, x, y):
 		if x < 0 or x > 7:
 			return -1
@@ -146,7 +149,7 @@ class Board():
 		self.set_piece(Queen("white"), 3, 0)
 		self.set_piece(Queen("black"), 3, 7)
 
-		#self.set_piece(Queen("black"), 4, 4)
+		#self.set_piece(Queen("black"), 3, 4)
 
 		self.set_piece(King("white"), 4, 0)
 		self.set_piece(King("black"), 4, 7)

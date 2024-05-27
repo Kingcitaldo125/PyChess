@@ -1,4 +1,4 @@
-from piece import Piece, Pawn, Rook, Knight
+from piece import Bishop, Rook, Knight
 
 
 class MoveHandler():
@@ -46,6 +46,7 @@ class MoveHandler():
 		# Attacks are only valid for cells in the forward-diagonal path
 		# that contain a pawn's enemy piece
 		attacks = xpiece.get_attacks(xcell.x, xcell.y)
+		newmoves = []
 
 		for m in piece_moves:
 			x,y = m[0],m[1]
@@ -55,7 +56,7 @@ class MoveHandler():
 				continue
 
 			if not cell.occupied():
-				self.moves.append((x,y))
+				newmoves.append((x,y))
 
 		for m in attacks:
 			x,y = m[0],m[1]
@@ -67,7 +68,9 @@ class MoveHandler():
 			if cell.occupied():
 				if cell.get_piece().team == xpiece.team:
 					continue
-				self.moves.append((x,y))
+				newmoves.append((x,y))
+
+		return newmoves
 
 	def show_moves(self):
 		for m in self.moves:
@@ -116,18 +119,18 @@ class MoveHandler():
 			if (nx, ny) not in visited:
 				self._los_help(curmoves, visited, xpiece, nx, ny)
 
-	def handle_los_from_cell(self, xcell, xpiece):
+	def handle_los_from_cell(self, xcell, xpiece, xmoves):
 		# Walk along the path denoted by by piece's moves
 		# Do a DFS to see if any other pieces are blocking the piece's path
 		# If the other piece is an enemy piece, include that in the path
 		# Otherwise, exclude teammate pieces from the path
 		visited = set([])
-		curmoves = [mv for mv in self.moves]
+		curmoves = [mv for mv in xmoves]
 		newmoves = []
 
 		self._los_help(curmoves, visited, xpiece, xcell.x, xcell.y)
 
-		for m in self.moves:
+		for m in xmoves:
 			if m not in visited:
 				continue
 
@@ -135,12 +138,12 @@ class MoveHandler():
 
 		return newmoves
 
-	def filter_moves(self, xcell, xpiece):
+	def filter_moves(self, xcell, xpiece, xmoves):
 		# Knight can jump over pieces
 		if type(xpiece) == Knight:
 			newmoves = []
 
-			for m in self.moves:
+			for m in xmoves:
 				mcell = self.board.get_cell_from_coord(m[0], m[1])
 
 				if mcell == -1:
@@ -156,4 +159,14 @@ class MoveHandler():
 
 			return newmoves
 
-		return self.handle_los_from_cell(xcell, xpiece)
+		return self.handle_los_from_cell(xcell, xpiece, xmoves)
+
+	def handle_queen_moves(self, xcell, xpiece):
+		# Handle odd pathfinding bug which includes excluded tiles
+		bmoves = Bishop(xpiece.team).get_moves(xcell.x, xcell.y)
+		rmoves = Rook(xpiece.team).get_moves(xcell.x, xcell.y)
+
+		xbmoves = self.filter_moves(xcell, xpiece, bmoves)
+		xrmoves = self.filter_moves(xcell, xpiece, rmoves)
+
+		return xbmoves + xrmoves

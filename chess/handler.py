@@ -2,7 +2,7 @@ import pygame
 
 import colors
 
-from piece import kinds, Pawn, Bishop, Rook, Knight, Queen
+from piece import kinds, Pawn, Queen
 
 
 class Handler():
@@ -30,23 +30,8 @@ class Handler():
 	def print_turn(self):
 		print("White's turn" if self.turn == 1 else "Black's turn")
 
-	def evaluate_check_help(self, ecell, piece_moves, eteam):
-		for m in piece_moves:
-			mcell = self.board.get_cell_from_coord(m[0], m[1])
-
-			if mcell == -1:
-				continue
-
-			if mcell.occupied():
-				mpiece = mcell.get_piece()
-				if mpiece.kind == kinds["king"] and mpiece.team == eteam:
-					print(f"{mpiece.team} king found in cell {mcell}")
-					return True
-
-		return False
-
 	def evaluate_check(self, team):
-		for row in self.board.cells:
+		for row in self.board.get_cells():
 			for cell in row:
 				if not cell.occupied():
 					continue
@@ -56,13 +41,26 @@ class Handler():
 				if piece.team == team:
 					continue
 
-				moves = self.move_handler.filter_moves(cell, piece)
+				piece_moves = piece.get_moves(cell.x, cell.y)
+				moves = self.move_handler.filter_moves(cell, piece, piece_moves)
 
-				ech = self.evaluate_check_help(cell, moves, team)
+				if type(piece) == Pawn:
+					moves = self.move_handler.handle_pawn_moves(cell, piece, moves)
+				elif type(piece) == Queen:
+					moves = self.move_handler.handle_queen_moves(cell, piece)
 
-				if ech == True:
-					return True
+				for m in moves:
+					mcell = self.board.get_cell_from_coord(m[0], m[1])
 
+					if mcell == -1:
+						continue
+
+					if mcell.occupied():
+						mpiece = mcell.get_piece()
+
+						if mpiece.kind == kinds["king"] and mpiece.team == team:
+							print(f"{mpiece.team} king found in cell {mcell} by {cell}")
+							return True
 		return False
 
 	def handle_game_logic(self, mx, my):
@@ -74,9 +72,10 @@ class Handler():
 
 		# Evaluate a check condition before moving the piece
 		if xpiece is not None:
-			check = self.evaluate_check(xpiece.team)
+			oteam = self.other_team(xpiece.team)
+			check = self.evaluate_check(oteam)
 			if check:
-				print(f"{xpiece.team} in check.")
+				print(f"{oteam} in check.")
 
 		# Set and render the potential moves for the selected cell
 		if xpiece is not None and self.selected_piece is None:
@@ -89,31 +88,19 @@ class Handler():
 
 			# Check for valid/invalid pawn moves/attacks
 			if type(xpiece) == Pawn:
-				self.move_handler.handle_pawn_moves(xcell, xpiece, piece_moves)
+				piece_moves = self.move_handler.handle_pawn_moves(xcell, xpiece, piece_moves.copy())
 			elif type(xpiece) == Queen:
-				# Handle odd pathfinding bug which includes excluded tiles
-				print("Handling queen moves")
-
-				bmoves = Bishop(xpiece.team).get_moves(xcell.x, xcell.y)
-				rmoves = Rook(xpiece.team).get_moves(xcell.x, xcell.y)
-
-				self.move_handler.set_moves(bmoves)
-				xbmoves = self.move_handler.filter_moves(xcell, xpiece)
-
-				self.move_handler.set_moves(rmoves)
-				xrmoves = self.move_handler.filter_moves(xcell, xpiece)
-
-				self.move_handler.set_moves(xbmoves + xrmoves)
+				piece_moves = self.move_handler.handle_queen_moves(xcell, xpiece)
 			else:
-				self.move_handler.set_moves([pm for pm in piece_moves])
-				xmoves = self.move_handler.filter_moves(xcell, xpiece)
-				self.move_handler.set_moves(xmoves)
+				pm = [p for p in piece_moves]
+				piece_moves = self.move_handler.filter_moves(xcell, xpiece, pm)
 
+			self.move_handler.set_moves(piece_moves)
 			self.move_handler.show_moves()
 
 		# Handle a potential piece move with a currently selected piece
 		if self.selected_piece is not None:
-			if not self.move_handler.valid_move(xcell, xpiece, self.selected_piece):
+			if not self.move_handler.valid_move(xcell, xpiece, self.selected_piece, print_why=False):
 				print(f"Not a valid_move: {self.selected_cell} -> {xcell}")
 				self.selected_piece = None
 				self.selected_cell = None
@@ -127,25 +114,13 @@ class Handler():
 			xcell.set_piece(self.selected_piece)
 			self.selected_piece.set_moved()
 
-			# Evaluate check condition after the piece move
-			check = self.evaluate_check(self.selected_piece.team)
-			if check:
-				print(f"{self.selected_piece.team} in check.")
-
-				# Revert the move
-				self.selected_cell.set_piece(self.selected_piece)
-				self.selected_cell.select()
-				xcell.set_piece(None)
-				self.selected_piece.unset_moved()
-
-				self.render()
-				return
-
 			# Change the player's turn
 			self.turn = 1 if self.turn == 0 else 0
 			self.print_turn()
 
 			oteam = self.other_team(self.selected_piece.team)
+
+			# Evaluate check condition after the piece move
 			check = self.evaluate_check(oteam)
 			if check:
 				print(f"{oteam} in check.")
